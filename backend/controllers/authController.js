@@ -1,12 +1,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+require('dotenv').config();
 const CandidateProfile = require('../models/CandidateProfile');
 const RecruiterProfile = require('../models/RecruiterProfile');
 const { generateAccessToken, generateRefreshToken } = require('../utils/token');
 const RefreshToken = require('../models/RefreshToken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret-key'; // keep it secure
+const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET; 
+console.log(JWT_SECRET);
 
 // Register
 exports.register = async (req, res) => {
