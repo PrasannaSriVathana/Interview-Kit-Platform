@@ -8,7 +8,11 @@ exports.createCourse = async (req, res) => {
     const { title, description, level } = req.body;
 
     if (req.user.role !== 'recruiter') {
-      return res.status(403).json({ message: 'Only recruiters can create courses' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only recruiters can create courses',
+        data: null
+      });
     }
 
     const course = await Course.create({
@@ -19,10 +23,18 @@ exports.createCourse = async (req, res) => {
       approved: false
     });
 
-    res.status(201).json({ message: 'Course created', course });
+    res.status(201).json({
+      status: 'success',
+      message: 'Course created successfully',
+      data: { course }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to create course' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to create course',
+      data: null
+    });
   }
 };
 
@@ -32,7 +44,11 @@ exports.addCourseModule = async (req, res) => {
     const { course_id, title, type, content_url, order_index } = req.body;
 
     if (req.user.role !== 'recruiter' && req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only recruiters or admins can add modules' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only recruiters or admins can add modules',
+        data: null
+      });
     }
 
     const newModule = await CourseModule.create({
@@ -43,10 +59,18 @@ exports.addCourseModule = async (req, res) => {
       order_index
     });
 
-    res.status(201).json({ message: 'Module added', module: newModule });
+    res.status(201).json({
+      status: 'success',
+      message: 'Module added successfully',
+      data: { module: newModule }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to add module' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to add module',
+      data: null
+    });
   }
 };
 
@@ -56,12 +80,20 @@ exports.enrollInCourse = async (req, res) => {
     const { course_id } = req.body;
 
     if (req.user.role !== 'candidate') {
-      return res.status(403).json({ message: 'Only candidates can enroll in courses' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only candidates can enroll in courses',
+        data: null
+      });
     }
 
     const course = await Course.findById(course_id);
     if (!course || !course.approved) {
-      return res.status(400).json({ message: 'Course not available for enrollment' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Course not available for enrollment',
+        data: null
+      });
     }
 
     const alreadyEnrolled = await CourseEnrollment.findOne({
@@ -70,7 +102,11 @@ exports.enrollInCourse = async (req, res) => {
     });
 
     if (alreadyEnrolled) {
-      return res.status(400).json({ message: 'Already enrolled in this course' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Already enrolled in this course',
+        data: null
+      });
     }
 
     const enrollment = await CourseEnrollment.create({
@@ -81,10 +117,18 @@ exports.enrollInCourse = async (req, res) => {
       certificate_url: ''
     });
 
-    res.status(201).json({ message: 'Enrollment successful', enrollment });
+    res.status(201).json({
+      status: 'success',
+      message: 'Enrollment successful',
+      data: { enrollment }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Enrollment failed' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Enrollment failed',
+      data: null
+    });
   }
 };
 
@@ -92,10 +136,19 @@ exports.enrollInCourse = async (req, res) => {
 exports.getAllApprovedCourses = async (req, res) => {
   try {
     const courses = await Course.find({ approved: true });
-    res.status(200).json(courses);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Approved courses fetched successfully',
+      data: { courses }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to fetch courses' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch courses',
+      data: null
+    });
   }
 };
 
@@ -105,17 +158,35 @@ exports.approveCourse = async (req, res) => {
     const { course_id } = req.body;
 
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Only admin can approve courses' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only admin can approve courses',
+        data: null
+      });
     }
 
     const course = await Course.findByIdAndUpdate(course_id, { approved: true }, { new: true });
 
-    if (!course) return res.status(404).json({ message: 'Course not found' });
+    if (!course) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Course not found',
+        data: null
+      });
+    }
 
-    res.status(200).json({ message: 'Course approved', course });
+    res.status(200).json({
+      status: 'success',
+      message: 'Course approved successfully',
+      data: { course }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to approve course' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to approve course',
+      data: null
+    });
   }
 };
 
@@ -123,44 +194,67 @@ exports.approveCourse = async (req, res) => {
 exports.getMyCourses = async (req, res) => {
   try {
     if (req.user.role !== 'candidate') {
-      return res.status(403).json({ message: 'Only candidates can view enrolled courses' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only candidates can view enrolled courses',
+        data: null
+      });
     }
 
     const enrollments = await CourseEnrollment.find({ user_id: req.user._id }).populate('course_id');
-    res.status(200).json(enrollments);
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Enrolled courses fetched successfully',
+      data: { enrollments }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to fetch enrolled courses' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch enrolled courses',
+      data: null
+    });
   }
 };
 
+// ✅ 7. Mark Module as Completed
 exports.markModuleComplete = async (req, res) => {
   try {
     const { course_id, module_id } = req.body;
 
     if (req.user.role !== 'candidate') {
-      return res.status(403).json({ message: 'Only candidates can mark progress' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Only candidates can mark progress',
+        data: null
+      });
     }
 
-    // Fetch all modules
     const allModules = await CourseModule.find({ course_id });
     const totalModules = allModules.length;
 
     if (totalModules === 0) {
-      return res.status(400).json({ message: 'Course has no modules' });
+      return res.status(400).json({
+        status: 'error',
+        message: 'Course has no modules',
+        data: null
+      });
     }
 
-    // Fetch enrollment
     const enrollment = await CourseEnrollment.findOne({
       course_id,
       user_id: req.user._id
     });
 
     if (!enrollment) {
-      return res.status(404).json({ message: 'Not enrolled in this course' });
+      return res.status(404).json({
+        status: 'error',
+        message: 'Not enrolled in this course',
+        data: null
+      });
     }
 
-    // Track completed module IDs (assume you store this in enrollment optionally)
     if (!enrollment.completedModules) {
       enrollment.completedModules = [];
     }
@@ -178,12 +272,19 @@ exports.markModuleComplete = async (req, res) => {
     await enrollment.save();
 
     res.status(200).json({
-      message: 'Module marked complete',
-      progress: enrollment.progress,
-      completed: enrollment.completed
+      status: 'success',
+      message: 'Module marked as completed',
+      data: {
+        progress: enrollment.progress,
+        completed: enrollment.completed
+      }
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to update progress' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to update progress',
+      data: null
+    });
   }
 };

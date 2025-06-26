@@ -5,10 +5,15 @@ const Submission = require('../models/Submission');
 const Course = require('../models/Course');
 const User = require('../models/User');
 
+// 🎓 Candidate Dashboard
 exports.getCandidateDashboard = async (req, res) => {
   try {
     if (req.user.role !== 'candidate') {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+        data: null
+      });
     }
 
     const enrolledCourses = await CourseEnrollment.find({ user_id: req.user._id })
@@ -21,20 +26,33 @@ exports.getCandidateDashboard = async (req, res) => {
       .populate('assessment_id');
 
     res.status(200).json({
-      enrolledCourses,
-      certificates,
-      submissions
+      status: 'success',
+      message: 'Candidate dashboard fetched successfully',
+      data: {
+        enrolledCourses,
+        certificates,
+        submissions
+      }
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to fetch candidate dashboard' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch candidate dashboard',
+      data: null
+    });
   }
 };
 
+// 🧑‍💼 Recruiter Dashboard
 exports.getRecruiterDashboard = async (req, res) => {
   try {
     if (req.user.role !== 'recruiter') {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+        data: null
+      });
     }
 
     const courses = await Course.find({ created_by: req.user._id });
@@ -46,20 +64,33 @@ exports.getRecruiterDashboard = async (req, res) => {
       .populate('user_id assessment_id');
 
     res.status(200).json({
-      courses,
-      assessments,
-      submissions
+      status: 'success',
+      message: 'Recruiter dashboard fetched successfully',
+      data: {
+        courses,
+        assessments,
+        submissions
+      }
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to fetch recruiter dashboard' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch recruiter dashboard',
+      data: null
+    });
   }
 };
 
+// 🛡️ Admin Dashboard
 exports.getAdminDashboard = async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Access denied' });
+      return res.status(403).json({
+        status: 'error',
+        message: 'Access denied',
+        data: null
+      });
     }
 
     const users = await User.find().select('name email role');
@@ -67,12 +98,19 @@ exports.getAdminDashboard = async (req, res) => {
     const pendingCourses = await Course.find({ approved: false }).populate('created_by');
 
     res.status(200).json({
-      users,
-      pendingCourses
+      status: 'success',
+      message: 'Admin dashboard fetched successfully',
+      data: {
+        users,
+        pendingCourses
+      }
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to fetch admin dashboard' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Failed to fetch admin dashboard',
+      data: null
+    });
   }
 };
-

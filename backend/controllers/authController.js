@@ -7,25 +7,26 @@ const RecruiterProfile = require('../models/RecruiterProfile');
 const { generateAccessToken, generateRefreshToken } = require('../utils/token');
 const RefreshToken = require('../models/RefreshToken');
 
-const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET; 
-console.log(JWT_SECRET);
+const JWT_SECRET = process.env.ACCESS_TOKEN_SECRET;
 
 // Register
 exports.register = async (req, res) => {
   try {
     const { name, email, password, role, education, experience, company_name, position, website } = req.body;
 
-    // Check if user exists
     const existingUser = await User.findOne({ email });
-    if (existingUser) return res.status(400).json({ message: 'User already exists' });
+    if (existingUser) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'User already exists',
+        data: null
+      });
+    }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user
     const user = await User.create({ name, email, password_hash: hashedPassword, role });
 
-    // Create role-specific profile
     if (role === 'candidate') {
       await CandidateProfile.create({
         user_id: user._id,
@@ -41,10 +42,18 @@ exports.register = async (req, res) => {
       });
     }
 
-    res.status(201).json({ message: 'Registration successful', userId: user._id });
+    res.status(201).json({
+      status: 'success',
+      message: 'Registration successful',
+      data: { userId: user._id }
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Something went wrong' });
+    res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong',
+      data: null
+    });
   }
 };
 
@@ -54,10 +63,13 @@ exports.login = async (req, res) => {
     const { email, password } = req.body;
     const user = await User.findOne({ email });
 
-    if (!user) return res.status(400).json({ message: 'Invalid credentials' });
-
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials' });
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid credentials',
+        data: null
+      });
+    }
 
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
@@ -65,27 +77,48 @@ exports.login = async (req, res) => {
     await RefreshToken.create({ user_id: user._id, token: refreshToken });
 
     res.status(200).json({
-      accessToken,
-      refreshToken,
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role
+      status: 'success',
+      message: 'Login successful',
+      data: {
+        accessToken,
+        refreshToken,
+        user: {
+          _id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role
+        }
       }
     });
   } catch (err) {
-    res.status(500).json({ message: 'Login failed' });
+    console.error(err);
+    res.status(500).json({
+      status: 'error',
+      message: 'Login failed',
+      data: null
+    });
   }
 };
 
-//refresh token
+// Refresh Token
 exports.refreshToken = async (req, res) => {
   const { token } = req.body;
-  if (!token) return res.status(401).json({ message: 'Token required' });
+  if (!token) {
+    return res.status(401).json({
+      status: 'error',
+      message: 'Token required',
+      data: null
+    });
+  }
 
   const stored = await RefreshToken.findOne({ token });
-  if (!stored) return res.status(403).json({ message: 'Invalid refresh token' });
+  if (!stored) {
+    return res.status(403).json({
+      status: 'error',
+      message: 'Invalid refresh token',
+      data: null
+    });
+  }
 
   try {
     const payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
@@ -98,20 +131,40 @@ exports.refreshToken = async (req, res) => {
     await stored.save();
 
     res.status(200).json({
-      accessToken: newAccessToken,
-      refreshToken: newRefreshToken
+      status: 'success',
+      message: 'Token refreshed successfully',
+      data: {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken
+      }
     });
   } catch (err) {
-    res.status(403).json({ message: 'Token expired or invalid' });
+    console.error(err);
+    res.status(403).json({
+      status: 'error',
+      message: 'Token expired or invalid',
+      data: null
+    });
   }
 };
 
-
-//logout
+// Logout
 exports.logoutUser = async (req, res) => {
   const { token } = req.body;
-  if (!token) return res.status(400).json({ message: 'Token is required' });
+
+  if (!token) {
+    return res.status(400).json({
+      status: 'error',
+      message: 'Token is required',
+      data: null
+    });
+  }
 
   await RefreshToken.findOneAndDelete({ token });
-  res.status(200).json({ message: 'Logged out successfully' });
+
+  res.status(200).json({
+    status: 'success',
+    message: 'Logged out successfully',
+    data: null
+  });
 };
