@@ -1,15 +1,21 @@
-
-import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
+import Landing from './pages/Landing/Landing';
+import Login from './pages/Auth/Login';
+import Register from './pages/Auth/Register';
 
 function App() {
-
-
   return (
-    <button className="bg-blue-500 text-white px-4 py-2 rounded">
-      Hello Tailwind
-    </button>
-  )
-  
+    <Router>
+      <Sidebar />
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        {/* More routes will be added here */}
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
